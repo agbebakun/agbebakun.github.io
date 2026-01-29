@@ -13,3 +13,4 @@ image_*.png
 calibration*.jpg
 calibration*.png
 ~\$*.docx
+calibration.json
