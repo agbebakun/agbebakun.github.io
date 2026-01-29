@@ -5,7 +5,6 @@ from fileinput import filename
 import sys
 import cv2
 import numpy as np
-import torch
 
 from classify import load_model, classify, print_scores, most_likely, print_pairwise_scores
 
@@ -318,7 +317,7 @@ def evaluate(filenames):
         print_scores(class_scores)
         detected_class = most_likely(class_scores)
 
-        print_pairwise_scores(class_scores, config.get('pairs', None))
+        pairwise_results = print_pairwise_scores(class_scores, config.get('pairs', None))
 
         if is_capture:
             print()
@@ -328,6 +327,13 @@ def evaluate(filenames):
             labeled_image = np.ones((100, 1200, 3), dtype=np.uint8) * 255
             cv2.putText(labeled_image, f"Detected: {detected_class}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3)
             cv2.imwrite(capture_filename + ".result.png", labeled_image)
+
+            # Write to watch.json as 'results' field
+            import json
+            watch_data = {}
+            watch_data['results'] = pairwise_results
+            with open('watch.json', 'w') as f:
+                json.dump(watch_data, f, indent=4)
 
         else:
             print(f"IMAGE: {filename} --> {detected_class}")

@@ -23,6 +23,9 @@ pip install flask
 
 # Additional dependencies from onnx-test.py
 pip install onnxscript onnxruntime
+
+## Additional dependencies for watch.py
+pip install flask flask-sock watchdog
 ```
 
 

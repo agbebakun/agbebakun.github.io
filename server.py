@@ -8,6 +8,7 @@ from detect_image import normalize_image, load_from_buffer  # For recognising fr
 HOST = '127.0.0.1'
 PORT = 5001
 CLASSES_JSON = True # Serve static file -- after training, requires:  python onnx-test.py export
+CLASSIFY_ALT = False
 
 model = load_model()
 
@@ -15,7 +16,7 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     # Serve static file
-    return send_from_directory('.', 'server.html')
+    return send_from_directory('.', 'index.html')
 
 
 # Web-based recognizer
@@ -108,7 +109,7 @@ def api_classify_strokes():
     raster_image = stroke_to_raster(vector_strokes, debugPrefix='web_strokes')
 
     # Classify
-    class_scores = classify(model, raster_image)
+    class_scores = classify(model, raster_image, CLASSIFY_ALT)
     detected_class = most_likely(class_scores)
 
     # Prepare response

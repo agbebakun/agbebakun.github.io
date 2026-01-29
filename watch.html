@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:;base64,">
+<title>State</title>
+<style>
+html, body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background-color: #333;
+}
+body {
+    max-width: 1200px;
+    margin: 0 auto;
+    /* background-color: white; */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+        "header header header"
+        "image-left image-center image-right"
+        "footer footer footer";
+}
+header {
+    grid-area: header;
+    padding: 10px;
+    background-color: #222;
+    color: white;
+    text-align: center;
+}
+section img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid black;
+    outline: 1px solid white;
+}
+section.image-left {
+    grid-area: image-left;
+    padding: 10px;
+}
+section.image-center {
+    grid-area: image-center;
+    padding: 10px;
+}
+section.image-right {
+    grid-area: image-right;
+    padding: 10px;
+}
+footer {
+    grid-area: footer;
+    padding: 10px;
+    background-color: #222;
+    color: white;
+    text-align: center;
+}
+footer img {
+    max-width: 100%;
+}
+footer pre {
+    font-weight: normal;
+    font-size: 4em;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Quick Draw!</h1>
+</header>
+
+<section class="image-left">
+    <img src="capture.png">
+</section>
+
+<section class="image-center">
+    <img src="capture.png.proc.png">
+</section>
+
+<section class="image-right">
+    <img src="capture.png.dilate.png">
+</section>
+
+<footer>
+    <!--
+    <div><img src="capture.png.result.png"></div>
+    -->
+    <pre>...</pre>
+</footer>
+
+<!--
+<textarea readonly rows="20" cols="50"></textarea>
+-->
+<script>
+// Log messages to console and, if present, a textarea
+function watchLog(message) {
+    console.log(message);
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+        textarea.value += message + '\n';
+        textarea.scrollTop = textarea.scrollHeight;
+    }
+}
+
+// Handle Watch events
+let modified = null;
+function watchEvent(event) {
+    // const watchEvent = {
+    //     source,     // watch
+    //     data,       // data
+    // };
+    // Handle Watch events here
+    watchLog(`WATCH: data=${event.data}`);
+    if (event.data && !event.data._initial && !event.data._failed) {
+        if (event.data._modified != modified) {
+            watchLog(`WATCH: Detected modification, reloading...`);
+            // Reload page
+            location.reload();
+        }
+    }
+    if (event.data._modified) {
+        modified = event.data._modified;
+    }
+    if (event.data.results) {
+        document.querySelector('footer pre').textContent = event.data.results.join('\n');
+    }
+}
+
+// Dynamically load a script (so we can tweak the Watch server address if required)
+async function dynamicallyLoadScript(url) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+        document.head.appendChild(script);
+    });
+}
+
+// Load the Watch script and start the connection
+async function runWatch() {
+    try {
+        let protocolSecure = location.protocol === 'https:' ? 's' : '';
+        let hostname = location.hostname;
+        let port = location.port;
+
+        // Override the address of the Watch server
+        if (!hostname) {    // e.g. file: protocol
+            hostname = '127.0.0.1';  // 'localhost'
+        }
+        protocolSecure = '';    // force non-secure
+        port = 5555;
+
+        const scriptUrl = `http${protocolSecure}://${hostname}:${port}/watch.js`;
+        const connectionString = `ws${protocolSecure}://${hostname}:${port}/ws`;
+
+        watchLog(`WATCH: Loading script from watch.py at: ${scriptUrl}`);
+        await dynamicallyLoadScript(scriptUrl);
+
+        watchLog(`WATCH: Connecting to watch.py at: ${scriptUrl}`);
+        const watch = new Watch(connectionString, watchEvent, watchLog);
+        watch.connect();
+    } catch (error) {
+        watchLog(`WATCH: Error - ${error.message}`);
+    }
+}
+
+// Start Watch now
+runWatch()
+
+</script>
+</body>
+</html>

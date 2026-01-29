@@ -41,12 +41,20 @@ def classify(model, image, alt_max = False):
         logit_values = logits.detach().cpu().numpy()[0]
         logit_values = [float(v) for v in logit_values]
         max_logit = max(logit_values)
-        #min_logit = min(logit_values)
-        # Exp values
-        exp_values = [pow(2.718281828459045, lv - max_logit) for lv in logit_values]
-        sum_exp = sum(exp_values)
-        scores = [ev / sum_exp for ev in exp_values]
-        print(scores)
+        min_logit = min(logit_values)
+
+        # Softmax
+        # exp_values = [pow(2.718281828459045, lv - max_logit) for lv in logit_values]
+        # sum_exp = sum(exp_values)
+        # scores = [ev / sum_exp for ev in exp_values]
+
+        # Linear scoring between min and max
+        range_logit = max_logit - min_logit
+        if range_logit == 0:
+            range_logit = 1
+        scores = [(lv - min_logit) / range_logit for lv in logit_values]
+
+        # print(scores)
     else:
         scores = torch.softmax(logits, dim=1).detach().cpu().numpy()[0]
         scores = [float(v) for v in scores]
@@ -75,11 +83,18 @@ def print_scores(class_scores, threshold=0.001, top_k=6):
     print("+-----------------------+")
 
 # Print pairwise scores
-def print_pairwise_scores(class_scores, pairs):
-    if pairs is None or len(pairs) == 0:
-        return
-    print("+------------ Pairwise Proportions -------------+")
-    for (class1, class2) in pairs:
+def print_pairwise_scores(class_scores, original_pairs):
+    results = []
+
+    # Top result
+    top_class, top_score = class_scores[0]
+    top_percentage = int(round(top_score * 100, 0))
+    results.append(f"Best guess: {top_class}: {top_percentage}%")
+
+    # Copy of pairs array, with scores
+    pairs = []
+    for i in range(len(original_pairs)):
+        (class1, class2) = original_pairs[i]
         score1 = 0.0
         score2 = 0.0
         for (cname, score) in class_scores:
@@ -93,9 +108,22 @@ def print_pairwise_scores(class_scores, pairs):
         if total > 0:
             p1 = int(round(score1 / total * 100.0))
             p2 = int(round(score2 / total * 100.0))
-        print(f"|  {class1:14s} {p1:>3.0f}%  |  {p2:>3.0f}% {class2:>14s}  |")
-    print("+-----------------------+-----------------------+")
+        pairs.append((class1, class2, score1, score2, p1, p2))
     
+    # Order the pairs by the highest valued match
+    pairs = sorted(pairs, key=lambda x: max(x[2], x[3]), reverse=True)
+
+    if pairs is not None and len(pairs) > 0:
+        print("+------------ Pairwise Proportions -------------+")
+        for (class1, class2, score1, score2, p1, p2) in pairs:
+            print(f"|  {class1:14s} {p1:>3.0f}%  |  {p2:>3.0f}% {class2:>14s}  |")
+        print("+-----------------------+-----------------------+")
+
+        # Results are the highest matching pair
+        top_pair = pairs[0]
+        results.append(f"{top_pair[0]}: {top_pair[4]}%  vs  {top_pair[1]}: {top_pair[5]}%")
+
+    return results
 
 def classes():
     return CLASSES
