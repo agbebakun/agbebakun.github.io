@@ -14,21 +14,22 @@ PADDING = 16
 UNIT_SIZE = 256
 CLASSIFY_SIZE = 28
 IMAGE_FILTER_COLOR = False  # When image is on a background color
-CLASSES_FILE = 'classes.json';
+CLASSES_FILE = 'classes.json'
+CALIBRATION_FILE = 'calibration.json'
 
-# Open capture.png.orig.png with e.g. Pinta.app to determine crop coordinates
-CAPTURE_IMAGE_COORDINATES = [
-    (782, 469),     # Top-left
-    (1278, 437),    # Top-right
-    (1298, 907),    # Bottom-right
-    (825, 932),     # Bottom-left
-]
 CAPTURE_IMAGE_SHARPEN = False
 CAPTURE_IMAGE_PERSPECTIVE = True
-CAPTURE_IMAGE_INSET = 0.05        # Additional 5% crop inset margin
+CAPTURE_IMAGE_INSET = 0.05        # Default: Additional 5% crop inset margin
 
 # Category-Category axis evaluation data
 config = {}
+
+# Capture image coordinates, etc.
+# To manually find, open capture.png.orig.png with e.g. Pinta.app to determine crop coordinates
+CALIBRATION_NTH_SQUARE = 0  # 0 = largest, -1 = smallest
+calibration = {
+   # "coordinates": [ [782, 469], [1278, 437], [1298, 907], [825, 932] ], # Top-left, Top-right, Bottom-right, Bottom-left
+}
 
 
 # Skeletonize - from: https://opencvpython.blogspot.com/2012/05/skeletonization-using-opencv-python.html
@@ -268,14 +269,17 @@ def evaluate(filenames):
         cv2.imwrite(capture_filename + '.orig.png', image)
         cap.release()
 
-        if CAPTURE_IMAGE_PERSPECTIVE:
-            image = crop_image_perspective(image, CAPTURE_IMAGE_COORDINATES)
-        else:
-            image = crop_image_axis_aligned(image, CAPTURE_IMAGE_COORDINATES)
+        capture_coordinates = calibration.get('coordinates', None)
+        if capture_coordinates:
+            if CAPTURE_IMAGE_PERSPECTIVE:
+                image = crop_image_perspective(image, capture_coordinates)
+            else:
+                image = crop_image_axis_aligned(image, capture_coordinates)
         cv2.imwrite(capture_filename + '.cut.png', image)
 
-        if CAPTURE_IMAGE_INSET:
-            image = crop_margin_proportion(image, CAPTURE_IMAGE_INSET)
+        capture_inset = calibration.get('inset', CAPTURE_IMAGE_INSET)
+        if capture_inset:
+            image = crop_margin_proportion(image, capture_inset)
         cv2.imwrite(capture_filename, image)
 
         filenames = [capture_filename]
@@ -329,21 +333,185 @@ def evaluate(filenames):
             print(f"IMAGE: {filename} --> {detected_class}")
 
 
-if __name__ == '__main__':
-    import json
-    try:
-        with open(CLASSES_FILE, 'r') as f:
-            config = json.load(f)
-    except:
-        print("ERROR: Problem loading evaluation data: " + CLASSES_FILE)
+def find_squares(image_filename, highlight_nth_square=None):
+    # Load image
+    image = load_from_file(image_filename)
+    orig_image = image.copy()
+    h, w = image.shape[0], image.shape[1]
 
-    if len(sys.argv) == 2 and sys.argv[1] == '--capture':
+    # Convert to greyscale
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    # Blur
+    gray = cv2.GaussianBlur(gray, (5,5), 0)
+
+    # Edge detection
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+
+    # Find contours
+    contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+    squares = []
+    for cnt in contours:
+        epsilon = 0.02 * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        if len(approx) == 4 and cv2.isContourConvex(approx):
+            squares.append(approx.reshape(4, 2))
+
+    # Sort squares by area (largest first)
+    squares.sort(key=lambda sq: cv2.contourArea(sq), reverse=True)
+
+    print(f"SQUARES: Found {len(squares)} squares in image.")
+
+    # Delete squares wholly contained within a larger square
+    filtered_squares = []
+    for i in range(len(squares)):
+        square_i = squares[i]
+        area_i = cv2.contourArea(square_i)
+        contained = False
+        for j in range(len(squares)):
+            if i == j:
+                continue
+            square_j = squares[j]
+            area_j = cv2.contourArea(square_j)
+            if area_j <= area_i:
+                continue
+            # Check if all points of square_i are within square_j
+            inside_count = 0
+            for point in square_i:
+                # Construct point
+                pt = tuple([int(round(point[0]) ), int(round(point[1]))])
+                result = cv2.pointPolygonTest(square_j, pt, False)
+                if result >= 0:
+                    inside_count += 1
+            if inside_count == 4:
+                contained = True
+                break
+        if not contained:
+            filtered_squares.append(square_i)
+
+    # Delete squares that have their centres inside a larger square
+    final_squares = []
+    for i in range(len(filtered_squares)):
+        square_i = filtered_squares[i]
+        area_i = cv2.contourArea(square_i)
+        M = cv2.moments(square_i)
+        if M["m00"] == 0:
+            continue
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        centre_point = (cX, cY)
+        contained = False
+        for j in range(len(filtered_squares)):
+            if i == j:
+                continue
+            square_j = filtered_squares[j]
+            area_j = cv2.contourArea(square_j)
+            if area_j <= area_i:
+                continue
+            result = cv2.pointPolygonTest(square_j, centre_point, False)
+            if result >= 0:
+                contained = True
+                break
+        if not contained:
+            final_squares.append(square_i)
+
+    print(f"SQUARES: After filtering, {len(final_squares)} squares remain.")
+
+    # Draw detected squares
+    for i in range(len(final_squares)):
+        square = final_squares[i]
+        # Other squares
+        color = (0, 255, 0)  # Green
+        if i == 0:  # Largest square (nth=0)
+            color = (0, 0, 255)  # Red
+        elif i == 1: # Second largest square (nth=1)
+            color = (255, 0, 0)  # Magenta
+        elif i == len(final_squares) - 1:  # Smallest square (nth=-1)
+            color = (255, 0, 0)  # Blue
+
+        thickness = 3
+        if highlight_nth_square is not None and i == highlight_nth_square:
+            color = (0, 255, 255)  # Yellow
+            thickness = 5
+
+        cv2.polylines(orig_image, [square], isClosed=True, color=color, thickness=3)
+        cv2.putText(orig_image, str(i), tuple(square[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+
+    cv2.imwrite(image_filename + ".squares.png", orig_image)
+    return final_squares
+
+
+def calibrate(calibration_image=None):
+    if calibration_image:
+        print(f"CALIBRATION: Using existing image: {calibration_image}")
+    else:
+        calibration_image = "calibration.png"
+        print("CALIBRATION: Capture an image with the camera showing the drawing area.")
+        # print("Press Enter to capture...")
+        # input()
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("ERROR: Could not open camera.")
+            return
+        cv2.waitKey(1000)  # Wait for camera adjustments
+        ret, image = cap.read()
+        if not ret:
+            print("ERROR: Could not read frame from camera.")
+            return
+        cv2.imwrite(calibration_image, image)
+        cap.release()
+
+    squares = find_squares(calibration_image, CALIBRATION_NTH_SQUARE)
+    if not squares:
+        print("ERROR: Calibration failed - no squares detected. Check captured image: " + calibration_image)
+        return
+
+    # Choose the Nth largest square (0 = largest, -1 = smallest)
+    print(f'CALIBRATION: Using n-th square for calibration: {CALIBRATION_NTH_SQUARE} of {len(squares)} detected squares.')
+    print("CALIBRATION: Check captured image: " + calibration_image)
+    chosen_square = squares[CALIBRATION_NTH_SQUARE]
+    calibration['coordinates'] = chosen_square.tolist()
+    print(calibration['coordinates'])
+    with open(CALIBRATION_FILE, 'w') as f:
+        import json
+        json.dump(calibration, f, indent=4)
+    
+
+
+if __name__ == '__main__':
+    import os
+    import json
+
+    if os.path.isfile(CLASSES_FILE):
+        try:
+            with open(CLASSES_FILE, 'r') as f:
+                config = json.load(f)
+        except:
+            print("ERROR: Problem loading evaluation data: " + CLASSES_FILE)
+
+    if os.path.isfile(CALIBRATION_FILE):
+        try:
+            with open(CALIBRATION_FILE, 'r') as f:
+                calibration = json.load(f)
+        except:
+            print("ERROR: Problem loading calibration data: " + CALIBRATION_FILE)
+
+    if len(sys.argv) > 1 and sys.argv[1] == '--calibrate':
+        calibration_image = None
+        if len(sys.argv) > 2:
+            calibration_image = sys.argv[2]
+        calibrate(calibration_image)
+    elif len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] == '--capture'):
         filenames = []
         while True:
             # Wait for key
-            key = input("Press Enter to capture image from camera...")
+            key = input("Press Enter to capture image from camera...").strip()
             if key.lower() == 'q':
                 break
+            elif key.lower() == 'c':
+                calibrate()
+                continue
             evaluate(filenames)
     else:
         filenames = sys.argv[1:]

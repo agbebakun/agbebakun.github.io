@@ -9,4 +9,7 @@ capture.png
 capture.png.*.png
 web_image.*.png
 web_strokes.*.png
-
+image_*.png
+calibration*.jpg
+calibration*.png
+~\$*.docx
