@@ -33,6 +33,7 @@ def convert_model():
     import os
     existing_data = {}
     excluded_classes = []
+    renamed_classes = {}
     if os.path.exists(CLASSES_FILE):
         print(f"Updating existing classes file: {CLASSES_FILE}")
         try:
@@ -40,13 +41,20 @@ def convert_model():
                 existing_data = json.load(f)
                 # Filter excluded classes with '_' prefix
                 excluded_classes = [c[1:] for c in existing_data.get('classes') if c.startswith('_')]
+                renamed_classes = existing_data.get('renamed_classes', {})
         except FileNotFoundError:
             pass
     
     # Update classes
     existing_data['classes'] = list_classes
 
-    # Rename any excluded classes to have a '_' prefix
+    # Rename any classes that were renamed
+    for old_name, new_name in renamed_classes.items():
+        if old_name in existing_data['classes']:
+            idx = existing_data['classes'].index(old_name)
+            existing_data['classes'][idx] = new_name
+
+    # Prefix any excluded classes with '_'
     for ex_class in excluded_classes:
         if ex_class in existing_data['classes']:
             idx = existing_data['classes'].index(ex_class)

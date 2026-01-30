@@ -21,6 +21,9 @@
         "lightning",
         "tree"
     ],
+    "renamed_classes": {
+        "pants": "trousers"
+    },
     "dialog": {
         "title": "Doodle with AI!",
         "content": "<p>Welcome to <em>Doodle with AI!</em></p><ul><li>Please draw the <strong>five things</strong> we ask for.</li><li>Press <em>Skip</em> if one is too tricky.</li><li>Press <em>Clear</em> if you make a mistake.</li></ul>",
@@ -31,6 +34,11 @@
         ["hammer", "tree"],
         ["hat", "book"],
         ["book", "door"]
+    ],
+    "_pairs": [
+        ["leaf", "feather"],
+        ["snake", "river"],
+        ["phone", "remote"]
     ],
     "maxCount": 5
 }
