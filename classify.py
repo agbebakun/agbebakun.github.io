@@ -82,14 +82,20 @@ def print_scores(class_scores, threshold=0.001, top_k=6):
                     break
     print("+-----------------------+")
 
-# Print pairwise scores
-def print_pairwise_scores(class_scores, original_pairs):
-    results = []
+# Calculate pairwise scores
+def pairwise_scores(class_scores, original_pairs):
+    results = {}
+
+    results["class_scores"] = []
+    for class_name, score in class_scores:
+        percentage = int(round(score * 100, 0))
+        results["class_scores"].append({"class": class_name, "score": score, "percentage": percentage})
 
     # Top result
     top_class, top_score = class_scores[0]
     top_percentage = int(round(top_score * 100, 0))
-    results.append(f"Best guess: {top_class}: {top_percentage}%")
+    results['top_class'] = top_class
+    results['top_percentage'] = top_percentage
 
     # Copy of pairs array, with scores
     pairs = []
@@ -108,22 +114,33 @@ def print_pairwise_scores(class_scores, original_pairs):
         if total > 0:
             p1 = int(round(score1 / total * 100.0))
             p2 = int(round(score2 / total * 100.0))
-        pairs.append((class1, class2, score1, score2, p1, p2))
+        pairValue = {
+            "class1": class1,
+            "class2": class2,
+            "score1": score1,
+            "score2": score2,
+            "percentage1": p1,
+            "percentage2": p2
+        }
+        pairs.append(pairValue)
     
     # Order the pairs by the highest valued match
-    pairs = sorted(pairs, key=lambda x: max(x[2], x[3]), reverse=True)
-
-    if pairs is not None and len(pairs) > 0:
-        print("+------------ Pairwise Proportions -------------+")
-        for (class1, class2, score1, score2, p1, p2) in pairs:
-            print(f"|  {class1:14s} {p1:>3.0f}%  |  {p2:>3.0f}% {class2:>14s}  |")
-        print("+-----------------------+-----------------------+")
-
-        # Results are the highest matching pair
-        top_pair = pairs[0]
-        results.append(f"{top_pair[0]}: {top_pair[4]}%  vs  {top_pair[1]}: {top_pair[5]}%")
+    pairs = sorted(pairs, key=lambda x: max(x['score1'], x['score2']), reverse=True)
+    results["pairs"] = pairs
+    results["top_pair"] = None
+    if len(pairs) > 0:
+        results["top_pair"] = pairs[0]
 
     return results
+
+
+# Print pairwise scores
+def print_pairwise_scores(pairwise_results):
+    if pairwise_results['pairs'] is not None and len(pairwise_results['pairs']) > 0:
+        print("+------------ Pairwise Proportions -------------+")
+        for pairValue in pairwise_results['pairs']:
+            print(f"|  {pairValue['class1']:14s} {pairValue['percentage1']:>3.0f}%  |  {pairValue['percentage2']:>3.0f}% {pairValue['class2']:>14s}  |")
+        print("+-----------------------+-----------------------+")
 
 def classes():
     return CLASSES

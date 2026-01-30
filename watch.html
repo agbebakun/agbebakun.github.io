@@ -63,9 +63,25 @@ footer {
 footer img {
     max-width: 100%;
 }
-footer pre {
+.results {
     font-weight: normal;
-    font-size: 4em;
+    font-size: 1em;
+    color: grey;
+}
+.results-guess {
+    /* No-wrap, ellipsis if overflow */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 10px;
+}
+.results-title {
+    color: white;
+}
+.results .top {
+    font-weight: bold;
+    font-size: 2em;
+    color: white;
 }
 </style>
 </head>
@@ -91,7 +107,7 @@ footer pre {
     <!--
     <div><img src="capture.png.result.png"></div>
     -->
-    <pre>...</pre>
+    <div class="results">...</pre>
 </footer>
 
 <!--
@@ -128,7 +144,56 @@ function watchEvent(event) {
         modified = event.data._modified;
     }
     if (event.data.results) {
-        document.querySelector('footer pre').textContent = event.data.results.join('\n');
+        const output = [];
+        output.push(`<div class="results-guess">`);
+        output.push(`<span class="results-title">I think it's:</span> `);
+        if (!event.data.results || !event.data.results.class_scores || !event.data.results.class_scores.length) {
+            output.push(`<span class="results-placeholder">-</span>`);
+        } else {
+            const class_score = event.data.results.class_scores[0];
+            output.push(`<span class="top">`);
+            output.push(`<span class="results-label">${class_score.class}</span> `);
+            output.push(`<span class="results-value">(${class_score.percentage}%)</span>. `);
+            output.push(`</span>`);
+
+            if (event.data.results.class_scores.length > 1) {
+                for (let i = 1; i < event.data.results.class_scores.length; i++) {
+                    const class_score = event.data.results.class_scores[i];
+                    const sep = (i < event.data.results.class_scores.length - 1) ? '; ' : '. ';
+                    output.push(`<span class="results-label">${class_score.class}</span> `);
+                    output.push(`<span class="results-value">(${class_score.percentage}%)</span>` + sep);
+                }
+            }
+        }
+        output.push(`</div>`);
+
+        output.push(`<div class="results-pairs">`);
+        output.push(`<span class="results-title">Pair-wise ratings:</span> `);
+        if (!event.data.results || !event.data.results.pairs || !event.data.results.pairs.length) {
+            output.push(`<span class="results-placeholder">-</span>`);
+        } else {
+            const pair = event.data.results.pairs[0];
+            output.push(`<div class="top">`);
+            output.push(`<span class="results-label">${pair.class1}</span>: `);
+            output.push(`<span class="results-value">${pair.percentage1}%</span>`);
+            output.push(`<span class="results-vs"> vs </span>`);
+            output.push(`<span class="results-label">${pair.class2}</span>: `);
+            output.push(`<span class="results-value">${pair.percentage2}%</span>. `);
+            output.push(`</div>`);
+
+            for (let i = 1; i < event.data.results.pairs.length; i++) {
+                const pair = event.data.results.pairs[i];
+                output.push(`<div>`);
+                output.push(`<span class="results-label">${pair.class1}</span>: `);
+                output.push(`<span class="results-value">${pair.percentage1}%</span>`);
+                output.push(`<span class="results-vs"> vs </span>`);
+                output.push(`<span class="results-label">${pair.class2}</span>: `);
+                output.push(`<span class="results-value">${pair.percentage2}%</span>`);
+                output.push(`</div>`);
+            }
+        }
+        output.push(`</div>`);
+        document.querySelector('.results').innerHTML = output.join('');
     }
 }
 

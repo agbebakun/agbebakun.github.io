@@ -6,7 +6,7 @@ import sys
 import cv2
 import numpy as np
 
-from classify import load_model, classify, print_scores, most_likely, print_pairwise_scores
+from classify import load_model, classify, print_scores, most_likely, pairwise_scores, print_pairwise_scores
 
 LINE_DIAMETER = 16
 PADDING = 16
@@ -317,7 +317,8 @@ def evaluate(filenames):
         print_scores(class_scores)
         detected_class = most_likely(class_scores)
 
-        pairwise_results = print_pairwise_scores(class_scores, config.get('pairs', None))
+        pairwise_results = pairwise_scores(class_scores, config.get('pairs', None))
+        print_pairwise_scores(pairwise_results)
 
         if is_capture:
             print()
