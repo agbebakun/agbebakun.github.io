@@ -21,9 +21,9 @@
         "lightning",
         "tree"
     ],
-    "_dialog": {
-        "title": "Quick Draw!",
-        "content": "<p>Welcome to <em>Quick Draw!</em></p>",
+    "dialog": {
+        "title": "Doodle with AI!",
+        "content": "<p>Welcome to <em>Doodle with AI!</em></p><ul><li>Please draw the <strong>five things</strong> we ask for.</li><li>Press <em>Skip</em> if one is too tricky.</li><li>Press <em>Clear</em> if you make a mistake.</li></ul>",
         "button": "Start Drawing!"
     },
     "pairs": [
@@ -32,5 +32,5 @@
         ["hat", "book"],
         ["book", "door"]
     ],
-    "_maxCount": 5
+    "maxCount": 5
 }

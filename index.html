@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="data:;base64,">
-<title>Quick Draw!</title>
+<title>Doodle with AI!</title>
 <style>
 body {
 	font-family: sans-serif;
@@ -165,18 +165,25 @@ dialog::backdrop {
 }
 dialog div.dialog_controls {
 	text-align: center;
-	margin-top: 2cm;
+	margin-top: 0.5cm;
 }
-dialog button {
-	background-color: #4CAF50;
+button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+button {
+	background: grey;
 	color: white;
-	border: none;
+	border: 1px solid #333;
 	border-radius: 5px;
 	padding: 0.5em 1em;
 	cursor: pointer;
 	transition: background-color 0.3s;
 	font-size: 1.2em;
 	padding: 1em;
+}
+dialog button, button.ok {
+	background-color: #4CAF50;
 }
 dialog button:hover {
 	background-color: #45a049;
@@ -187,7 +194,7 @@ dialog button:hover {
 
 <main>
 <div class="heading">
-	<a href="https://github.com/CCAI-CDT/QuickDraw" target="_blank">Quick Draw!</a>
+	<a href="https://github.com/CCAI-CDT/QuickDraw" target="_blank">Doodle with AI!</a>
 </div>
 
 <!-- Test form to get classes -->
@@ -207,7 +214,7 @@ dialog button:hover {
 -->
 
 <div class="controls">
-	<button id="clearButton">🗑️ Clear</button>
+	<button id="clearButton">❌ Clear</button> <!-- 🗑️ -->
 	<div class="instructions">-</div>
 	<button class="hidden" id="classifyStrokesButton">❓ Check</button>
 	<button class="hidden" id="classifyImageButton">Check from Image</button>
@@ -219,9 +226,9 @@ dialog button:hover {
 <div class="results"></div>
 
 <dialog>
-<h1>Quick Draw!</h1>
+<h1>Doodle with AI!</h1>
 <div>
-	<p>Welcome to <em>Quick Draw!</em></p>
+	<p>Welcome to <em>Doodle with AI!</em></p>
 </div>
 <div class="dialog_controls">
 	<button id="start" onclick="this.closest('dialog').close();">Start Drawing!</button>
@@ -630,6 +637,7 @@ function next_drawing() {
 function update_instructions() {
 	const instructionsDiv = document.querySelector(".instructions");
 	let message = '-';
+	let highlightNext = false;
 
 	if (!config.classes) {		// Only if classes are not loaded yet
 		message = "(Press 'Start' to begin)";
@@ -643,12 +651,12 @@ function update_instructions() {
 	} else if (drawing_class) {
 		const of = config && config.maxCount ? ` of ${config.maxCount}` : '';
 		if (recognized_class === drawing_class) {
-			message = `You drew (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
-			message += " ✅";
+			message = `🎉 You drew (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
+			highlightNext = true;
 			if (config.maxCount && drawing_count >= config.maxCount) {
 				document.querySelector("#nextButton").innerText = "🏁 Finish";
 			} else {
-				document.querySelector("#nextButton").innerText = "➡️ Next";
+				document.querySelector("#nextButton").innerText = "✅ Next";	// ➡️
 			}
 		} else {
 			message = `Draw (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
@@ -659,6 +667,7 @@ function update_instructions() {
 		document.querySelector("#nextButton").innerText = "➡️ Next";
 	}
 	instructionsDiv.innerHTML = message;
+	document.querySelector("#nextButton").classList.toggle("ok", highlightNext);
 }
 
 function clear() {
