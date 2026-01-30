@@ -88,9 +88,28 @@ main {
 }
 */
 
+.msg-draw {
+	white-space: nowrap;
+}
+
+.msg-count {
+	white-space: nowrap;
+	font-size: 0.8em;
+	opacity: 0.7;
+}
+
 .controls .instructions .item {
 	font-weight: bold;
 	font-size: 2em;
+	white-space: nowrap;
+}
+
+.controls .instructions .item.long {
+	/* font-stretch: condensed; */
+	letter-spacing: -2px;
+	display: inline-block;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
@@ -669,8 +688,9 @@ function update_instructions() {
 		}
 	} else if (drawing_class) {
 		const of = config && config.maxCount ? ` of ${config.maxCount}` : '';
+		const long = drawing_class.length > 8 ? ' long' : ''
 		if (recognized_class === drawing_class) {
-			message = `👍 You drew (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
+			message = `<span class="msg-draw">👍</span> <span class="msg-count">(${drawing_count}${of})</span><br><span class="item${long}">${drawing_class}</span>`;
 			highlightNext = true;
 			if (config.maxCount && drawing_count >= config.maxCount) {
 				document.querySelector("#nextButton").innerText = "🏁 Finish";
@@ -678,7 +698,7 @@ function update_instructions() {
 				document.querySelector("#nextButton").innerText = "✅ Next";	// ➡️
 			}
 		} else {
-			message = `✏️ Draw (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
+			message = `<span class="msg-draw">✏️ Draw</span> <span class="msg-count">(${drawing_count}${of})</span><br><span class="item${long}">${drawing_class}</span>`;
 			document.querySelector("#nextButton").innerText = "↩️ Skip";
 		}
 	} else {
