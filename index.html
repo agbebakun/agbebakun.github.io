@@ -142,12 +142,23 @@ main {
 .hidden {
 	display: none;
 }
+dl {
+	opacity: 0.5;
+}
 dt {
   display: inline-block;
-  width: 4em;
+  width: 5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 dd {
+  margin-left: 0;
   display: inline;
+  width: 1em;
+  text-align: right;
+  vertical-align: middle;
 }
 dd::after {
   content: "\A";
@@ -231,7 +242,7 @@ dialog button:hover {
 	<p>Welcome to <em>Doodle with AI!</em></p>
 </div>
 <div class="dialog_controls">
-	<button id="start" onclick="this.closest('dialog').close();">Start Drawing!</button>
+	<button id="start">Start Drawing!</button>
 </div>
 </dialog>
 
@@ -586,14 +597,16 @@ async function locally_classify_strokes() {
 }
 
 // ------
-
-
-
 let shuffled_classes = [];
 let drawing_count = 1;
 function next_drawing() {
 	classify_mode = false;
 	
+	if (finished) {
+		started();
+		return;
+	}
+
 	// Count correct drawings
 	if (drawing_class && recognized_class === drawing_class) {
 		if (config.maxCount && drawing_count >= config.maxCount) {
@@ -638,6 +651,7 @@ function update_instructions() {
 	const instructionsDiv = document.querySelector(".instructions");
 	let message = '-';
 	let highlightNext = false;
+	let nextDisabled = false;
 
 	if (!config.classes) {		// Only if classes are not loaded yet
 		message = "(Press 'Start' to begin)";
@@ -647,11 +661,16 @@ function update_instructions() {
 		document.querySelector("#nextButton").innerText = "➡️ Resume";
 	} else if (finished) {
 		message = config.finishMessage ? config.finishMessage : `🎉 You drew all ${config.maxCount}, thanks for playing!`;
-		document.querySelector("#nextButton").disabled = true;
+		if (config && config.noRestart) {
+			document.querySelector("#nextButton").innerText = "🏁 Finish";
+			nextDisabled = true;
+		} else {
+			document.querySelector("#nextButton").innerText = "🔄 Restart";
+		}
 	} else if (drawing_class) {
 		const of = config && config.maxCount ? ` of ${config.maxCount}` : '';
 		if (recognized_class === drawing_class) {
-			message = `🎉 You drew (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
+			message = `👍 You drew (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
 			highlightNext = true;
 			if (config.maxCount && drawing_count >= config.maxCount) {
 				document.querySelector("#nextButton").innerText = "🏁 Finish";
@@ -659,15 +678,18 @@ function update_instructions() {
 				document.querySelector("#nextButton").innerText = "✅ Next";	// ➡️
 			}
 		} else {
-			message = `Draw (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
+			message = `✏️ Draw (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
 			document.querySelector("#nextButton").innerText = "↩️ Skip";
 		}
 	} else {
-		message = 'Draw one of: ' + config.classes.map(c => `<span class="item">${c}</span>`).join(", ") + '.';
+		//message = 'Draw one of: ' + config.classes.map(c => `<span class="item">${c}</span>`).join(", ") + '.';
+		message = '';
 		document.querySelector("#nextButton").innerText = "➡️ Next";
+		nextDisabled = true;
 	}
 	instructionsDiv.innerHTML = message;
 	document.querySelector("#nextButton").classList.toggle("ok", highlightNext);
+	document.querySelector("#nextButton").disabled = nextDisabled;
 }
 
 function clear() {
@@ -863,6 +885,31 @@ function stopDrawing(pointerId) {
 	}
 }
 
+
+function started() {
+	finished = false;
+	classify_mode = false;
+	drawing_count = 1;
+	drawing_class = null;
+	recognized_class = null;
+	clear();
+
+	if (config.dialog) {
+		if (config.dialog.title) {
+			document.querySelector("dialog h1").innerHTML = config.dialog.title;
+		}
+		if (config.dialog.content) {
+			document.querySelector("dialog div").innerHTML = config.dialog.content;
+		}
+		if (config.dialog.button) {
+			document.querySelector("dialog button").innerHTML = config.dialog.button;
+		}
+		document.querySelector("dialog").showModal();
+	} else {
+		next_drawing();
+	}
+}
+
 async function run() {
 	try {
 		config = await get_config();
@@ -874,7 +921,11 @@ async function run() {
 	if (config.renamed_classes) {
 		config.classes = config.classes.map(c => config.renamed_classes[c] || c);
 	}
-	next_drawing();
+
+	document.querySelector("#start").addEventListener("click", () => {
+		document.querySelector("dialog").close();
+		next_drawing();
+	});
 
 	// Handle dropped files anywhere on the page
 	window.addEventListener("dragover", (e) => {
@@ -942,23 +993,12 @@ async function run() {
 	resizeCanvas();
 	window.addEventListener("resize", resizeCanvas);
 
-	if (config.dialog) {
-		if (config.dialog.title) {
-			document.querySelector("dialog h1").innerHTML = config.dialog.title;
-		}
-		if (config.dialog.content) {
-			document.querySelector("dialog div").innerHTML = config.dialog.content;
-		}
-		if (config.dialog.button) {
-			document.querySelector("dialog button").innerHTML = config.dialog.button;
-		}
-		document.querySelector("dialog").showModal();
-	}
-
 	// In local-recognition mode, preload
 	if (USE_LOCAL_RECOGNIZER) {
 		await recognize(); // Preload model
 	}
+
+	started();
 }
 
 window.addEventListener("error", function(e) {

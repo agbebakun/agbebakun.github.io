@@ -7,7 +7,10 @@ import torch
 from src import model
 torch.serialization.add_safe_globals([model.QuickDraw, torch.nn.modules.container.Sequential, torch.nn.modules.conv.Conv2d, torch.nn.modules.activation.ReLU, torch.nn.modules.pooling.MaxPool2d, torch.nn.modules.linear.Linear, torch.nn.modules.dropout.Dropout])
 
-DEFAULT_MODEL = "trained_models/whole_model_quickdraw"
+suffix = ""
+if USE_ALT_CLASSES:
+    suffix = "-" + USE_ALT_CLASSES
+DEFAULT_MODEL = f"trained_models/whole_model_quickdraw{suffix}"
 IMAGE_SIZE = 28
 
 def load_model(filename = DEFAULT_MODEL):
@@ -66,13 +69,15 @@ def most_likely(class_scores):
     return class_scores[0][0]
 
 # Print scores
-def print_scores(class_scores, threshold=0.001, top_k=6):
+def print_scores(class_scores, threshold=0.001, top_k=6, rename=None):
     print("+----- Recognition -----+")
     count = 0
     for class_name, score, _alt_score in class_scores:
         if score >= threshold:
             percentage = int(round(score * 100, 0))
             if percentage > 0:
+                if rename and class_name in rename:
+                    class_name = rename[class_name]
                 print(f"|  {class_name:14s} {percentage:>3}%  |")
                 count += 1
                 if top_k and count >= top_k:
@@ -80,12 +85,14 @@ def print_scores(class_scores, threshold=0.001, top_k=6):
     print("+-----------------------+")
 
 # Calculate pairwise scores
-def pairwise_scores(class_scores, original_pairs):
+def pairwise_scores(class_scores, original_pairs, rename=None, use_alt_score=False):
     results = {}
 
     results["class_scores"] = []
     for class_name, score, alt_score in class_scores:
         percentage = int(round(score * 100, 0))
+        if rename and class_name in rename:
+            class_name = rename[class_name]
         results["class_scores"].append({"class": class_name, "score": score, "percentage": percentage, "alt_score": alt_score})
 
     # Top result
@@ -96,38 +103,51 @@ def pairwise_scores(class_scores, original_pairs):
 
     # Copy of pairs array, with scores
     pairs = []
-    for i in range(len(original_pairs)):
-        pairwise_class_scores = class_scores
-        (class1, class2) = original_pairs[i]
-        score1 = 0.0
-        score2 = 0.0
-        alt_score1 = 0.0
-        alt_score2 = 0.0
-        for (cname, score, alt_score) in pairwise_class_scores:
-            if cname == class1:
-                score1 = score
-                alt_score1 = alt_score
-            if cname == class2:
-                score2 = score
-                alt_score2 = alt_score
-        total = alt_score1 + alt_score2
-        p1 = 0
-        p2 = 0
-        if total > 0:
-            p1 = int(round(alt_score1 / total * 100.0))
-            p2 = int(round(alt_score2 / total * 100.0))
-        pairValue = {
-            "class1": class1,
-            "class2": class2,
-            "score1": score1,
-            "score2": score2,
-            "percentage1": p1,
-            "percentage2": p2,
-            "alt_score1": alt_score1,
-            "alt_score2": alt_score2
-        }
-        pairs.append(pairValue)
-    
+    if original_pairs:
+        for i in range(len(original_pairs)):
+            pairwise_class_scores = class_scores
+            (class1, class2) = original_pairs[i]
+            score1 = 0.0
+            score2 = 0.0
+            alt_score1 = 0.0
+            alt_score2 = 0.0
+            for (cname, score, alt_score) in pairwise_class_scores:
+                if cname == class1:
+                    score1 = score
+                    alt_score1 = alt_score
+                if cname == class2:
+                    score2 = score
+                    alt_score2 = alt_score
+            p1 = 0
+            p2 = 0
+            if use_alt_score:
+                total = alt_score1 + alt_score2
+                if total > 0:
+                    p1 = int(round(alt_score1 / total * 100.0))
+                    p2 = int(round(alt_score2 / total * 100.0))
+            else:
+                total = score1 + score2
+                if total > 0:
+                    p1 = int(round(score1 / total * 100.0))
+                    p2 = int(round(score2 / total * 100.0))
+
+            if rename and class1 in rename:
+                class1 = rename[class1]
+            if rename and class2 in rename:
+                class2 = rename[class2]
+
+            pairValue = {
+                "class1": class1,
+                "class2": class2,
+                "score1": score1,
+                "score2": score2,
+                "percentage1": p1,
+                "percentage2": p2,
+                "alt_score1": alt_score1,
+                "alt_score2": alt_score2
+            }
+            pairs.append(pairValue)
+        
     # Order the pairs by the highest valued match
     pairs = sorted(pairs, key=lambda x: max(x['score1'], x['score2']), reverse=True)
     results["pairs"] = pairs

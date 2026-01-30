@@ -4,11 +4,16 @@ from flask import Flask, jsonify, request, send_from_directory
 from classify import load_model, classify, most_likely, classes
 from stroke_to_raster import stroke_to_raster               # For recognising from strokes
 from detect_image import normalize_image, load_from_buffer  # For recognising from image data
+from src.config import USE_ALT_CLASSES
 
 HOST = '127.0.0.1'
 PORT = 5001
-CLASSES_JSON = True # Serve static file -- after training, requires:  python onnx-test.py export
-CLASSIFY_ALT = False
+
+CLASSES_JSON = "classes.json" # Serve static file -- after training, requires:  python onnx-test.py export
+MODEL_ONNX = "trained_models/whole_model_quickdraw.onnx"
+if USE_ALT_CLASSES:
+    CLASSES_JSON = CLASSES_JSON.replace(".", f"-{USE_ALT_CLASSES}.")
+    MODEL_ONNX = MODEL_ONNX.replace(".", f"-{USE_ALT_CLASSES}.")
 
 model = load_model()
 
@@ -31,14 +36,16 @@ def ort_wasm_simd_wasm():
     return send_from_directory('.', 'ort/ort-wasm-simd.wasm', mimetype='application/wasm')
 @app.route('/trained_models/whole_model_quickdraw.onnx')
 def onnx_model():
-    return send_from_directory('.', 'trained_models/whole_model_quickdraw.onnx', mimetype='application/binary')
+    print("NOTE: /trained_models/whole_model_quickdraw.onnx file:", MODEL_ONNX)
+    return send_from_directory('.', MODEL_ONNX, mimetype='application/binary')
 
 
 # API - return classes
 @app.route('/classes.json')
 def api_get_classes():
     if CLASSES_JSON:
-        return send_from_directory('.', 'classes.json', mimetype='application/json')
+        print("NOTE: /classes.json file:", CLASSES_JSON)
+        return send_from_directory('.', CLASSES_JSON, mimetype='application/json')
     else:
         classes_list = classes()
         return {"classes": classes_list}
@@ -109,7 +116,7 @@ def api_classify_strokes():
     raster_image = stroke_to_raster(vector_strokes, debugPrefix='web_strokes')
 
     # Classify
-    class_scores = classify(model, raster_image, CLASSIFY_ALT)
+    class_scores = classify(model, raster_image)
     detected_class = most_likely(class_scores)
 
     # Prepare response

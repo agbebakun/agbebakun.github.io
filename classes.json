@@ -46,10 +46,7 @@
         ["hat", "book"],
         ["book", "door"]
     ],
-    "_pairs": [
-        ["leaf", "feather"],
-        ["snake", "river"],
-        ["phone", "remote"]
-    ],
-    "maxCount": 5
+    "altScore": false,
+    "maxCount": 5,
+    "noRestart": false
 }

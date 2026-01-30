@@ -2,9 +2,13 @@
 import sys
 
 from classify import load_model, IMAGE_SIZE, classes
+from src.config import USE_ALT_CLASSES
 
-MODEL_FILE = "trained_models/whole_model_quickdraw.onnx"
-CLASSES_FILE = "classes.json"
+suffix = ""
+if USE_ALT_CLASSES:
+    suffix = "-" + USE_ALT_CLASSES
+MODEL_FILE = f"trained_models/whole_model_quickdraw{suffix}.onnx"
+CLASSES_FILE = f"classes{suffix}.json"
 
 
 def convert_model():

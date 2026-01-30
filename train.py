@@ -16,6 +16,7 @@ from src.dataset import MyDataset
 from src.model import QuickDraw
 from src.utils import get_evaluation
 
+from src.config import USE_ALT_CLASSES
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -49,7 +50,10 @@ def train(opt):
     test_params = {"batch_size": opt.batch_size,
                    "shuffle": False}
 
-    output_file = open(opt.saved_path + os.sep + "logs.txt", "w")
+    log_filename = "logs"
+    if USE_ALT_CLASSES:
+        log_filename += "-" + USE_ALT_CLASSES
+    output_file = open(opt.saved_path + os.sep + log_filename + ".txt", "w")
     output_file.write("Model's parameters: {}".format(vars(opt)))
 
     training_set = MyDataset(opt.data_path, opt.total_images_per_class, opt.ratio, "train")
@@ -145,7 +149,10 @@ def train(opt):
         if te_loss + opt.es_min_delta < best_loss:
             best_loss = te_loss
             best_epoch = epoch
-            torch.save(model, opt.saved_path + os.sep + "whole_model_quickdraw")
+            filename = "whole_model_quickdraw"
+            if USE_ALT_CLASSES:
+                filename += "-" + USE_ALT_CLASSES
+            torch.save(model, opt.saved_path + os.sep + filename)
         if epoch - best_epoch > opt.es_patience > 0:
             print("Stop training at epoch {}. The lowest loss achieved is {}".format(epoch, te_loss))
             break

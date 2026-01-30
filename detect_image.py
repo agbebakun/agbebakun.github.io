@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 
 from classify import load_model, classify, print_scores, most_likely, pairwise_scores, print_pairwise_scores
+from src.config import USE_ALT_CLASSES
 
 LINE_DIAMETER = 16
 PADDING = 16
@@ -14,6 +15,8 @@ UNIT_SIZE = 256
 CLASSIFY_SIZE = 28
 IMAGE_FILTER_COLOR = False  # When image is on a background color
 CLASSES_FILE = 'classes.json'
+if USE_ALT_CLASSES:
+    CLASSES_FILE = CLASSES_FILE.replace(".", f"-{USE_ALT_CLASSES}.")
 CALIBRATION_FILE = 'calibration.json'
 
 CAPTURE_IMAGE_SHARPEN = False
@@ -246,7 +249,7 @@ def crop_image_axis_aligned(image, crop_coordinates):
     return image
 
 
-def evaluate(filenames):
+def evaluate(filenames, use_alt_score):
     model = load_model()
 
     hack_sharpen = False
@@ -314,10 +317,10 @@ def evaluate(filenames):
         
         class_scores = classify(model, normalized_image)
         print()
-        print_scores(class_scores)
+        print_scores(class_scores, rename=config.get('renamed_classes', None))
         detected_class = most_likely(class_scores)
 
-        pairwise_results = pairwise_scores(class_scores, config.get('pairs', None))
+        pairwise_results = pairwise_scores(class_scores, config.get('pairs', None), config.get('renamed_classes', None), use_alt_score)
         print_pairwise_scores(pairwise_results)
 
         if is_capture:
@@ -489,11 +492,13 @@ def calibrate(calibration_image=None):
 if __name__ == '__main__':
     import os
     import json
-
+    use_alt_score = False
+    
     if os.path.isfile(CLASSES_FILE):
         try:
             with open(CLASSES_FILE, 'r') as f:
                 config = json.load(f)
+                use_alt_score = config.get('altScore', False)
         except:
             print("ERROR: Problem loading evaluation data: " + CLASSES_FILE)
 
@@ -519,7 +524,7 @@ if __name__ == '__main__':
             elif key.lower() == 'c':
                 calibrate()
                 continue
-            evaluate(filenames)
+            evaluate(filenames, use_alt_score)
     else:
         filenames = sys.argv[1:]
-        evaluate(filenames)
+        evaluate(filenames, use_alt_score)
