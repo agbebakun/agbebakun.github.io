@@ -20,6 +20,9 @@ CAPTURE_IMAGE_SHARPEN = False
 CAPTURE_IMAGE_PERSPECTIVE = True
 CAPTURE_IMAGE_INSET = 0.05        # Default: Additional 5% crop inset margin
 
+# HACK: For pairwise results, use alternative scoring
+USE_ALTERNATIVE_SCORING = True
+
 # Category-Category axis evaluation data
 config = {}
 
@@ -312,12 +315,12 @@ def evaluate(filenames):
             
             normalized_image = normalize_image(image, hack_sharpen, debugPrefix)
         
-        class_scores = classify(model, normalized_image)
+        class_scores, alt_class_scores = classify(model, normalized_image, USE_ALTERNATIVE_SCORING)
         print()
         print_scores(class_scores)
         detected_class = most_likely(class_scores)
 
-        pairwise_results = pairwise_scores(class_scores, config.get('pairs', None))
+        pairwise_results = pairwise_scores(class_scores, alt_class_scores, config.get('pairs', None))
         print_pairwise_scores(pairwise_results)
 
         if is_capture:

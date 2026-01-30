@@ -82,7 +82,7 @@ def main():
         elif key == ord(" "):
             # Original resize method
             image = resize_image(image)
-            class_scores = classify(model, image)
+            class_scores, _ = classify(model, image)
             print_scores(class_scores)
             detected_class = most_likely(class_scores)
             print("Original: " + detected_class)
@@ -91,7 +91,7 @@ def main():
 
             # New resize method -- convert strokes to required format
             image = stroke_to_raster(strokes)
-            class_scores = classify(model, image)
+            class_scores, _ = classify(model, image)
             print_scores(class_scores)
             detected_class = most_likely(class_scores)
             print("New: " + detected_class)

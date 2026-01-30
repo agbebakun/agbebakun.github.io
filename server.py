@@ -60,7 +60,7 @@ def api_classify_image_file():
     normalized_image = normalize_image(image)
 
     # Classify
-    class_scores = classify(model, normalized_image)
+    class_scores, _ = classify(model, normalized_image)
     detected_class = most_likely(class_scores)
 
     # Prepare response
@@ -84,7 +84,7 @@ def api_classify_image_data():
     # Normalize image
     normalized_image = normalize_image(image, debugPrefix='web_image')
     # Classify
-    class_scores = classify(model, normalized_image)
+    class_scores, _ = classify(model, normalized_image)
     detected_class = most_likely(class_scores)
     # Prepare response
     response = {
@@ -109,7 +109,7 @@ def api_classify_strokes():
     raster_image = stroke_to_raster(vector_strokes, debugPrefix='web_strokes')
 
     # Classify
-    class_scores = classify(model, raster_image, CLASSIFY_ALT)
+    class_scores, _ = classify(model, raster_image, CLASSIFY_ALT)
     detected_class = most_likely(class_scores)
 
     # Prepare response
