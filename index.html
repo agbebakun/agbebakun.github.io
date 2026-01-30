@@ -612,7 +612,7 @@ function next_drawing() {
 		if (!shuffled_classes.length) {
 			shuffled_classes = config.classes.slice();
 			// Filter out classes with a '_' prefix
-			shuffled_classes = shuffled_classes.filter(c => !c.startsWith('_'));
+			shuffled_classes = shuffled_classes.filter(c => (!config.ignored_classes || !config.ignored_classes.includes(c)));
 			// Try to avoid the same class as last time
 			for (let retry = 0; retry < 10; retry++) {
 				// Shuffle
@@ -869,6 +869,10 @@ async function run() {
 	} catch (e) {
 		last_error = 'Error: Problem loading config: ' + e.reason;
 		show_results();
+	}
+	// Rename classes
+	if (config.renamed_classes) {
+		config.classes = config.classes.map(c => config.renamed_classes[c] || c);
 	}
 	next_drawing();
 
