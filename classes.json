@@ -22,7 +22,15 @@
         "tree"
     ],
     "renamed_classes": {
-        "pants": "trousers"
+        "airplane": "aeroplane",
+        "cell phone": "mobile phone",
+        "couch": "sofa",
+        "eyeglasses": "pair of glasses",
+        "flashlight": "torch",
+        "pants": "trousers",
+        "sailboat": "sailing boat",
+        "streetlight": "street lamp",
+        "truck": "lorry"
     },
     "ignored_classes": [
         "leaf"
