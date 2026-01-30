@@ -134,11 +134,7 @@ function watchEvent(event) {
     // Handle Watch events here
     watchLog(`WATCH: data=${event.data}`);
     if (event.data && !event.data._initial && !event.data._failed) {
-        if (event.data._modified != modified) {
-            watchLog(`WATCH: Detected modification, reloading...`);
-            // Reload page
-            location.reload();
-        }
+        watchLog(`WATCH: Non-initial event, reloading...`);
     }
     if (event.data._modified) {
         modified = event.data._modified;
