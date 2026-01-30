@@ -17,7 +17,7 @@
         "scissors",
         "star",
         "t-shirt",
-        "pants",
+        "trousers",
         "lightning",
         "tree"
     ],
@@ -31,5 +31,6 @@
         ["hammer", "tree"],
         ["hat", "book"],
         ["book", "door"]
-    ]
+    ],
+    "_maxCount": 5
 }

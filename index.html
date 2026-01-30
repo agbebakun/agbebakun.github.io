@@ -75,20 +75,22 @@ main {
 }
 
 .controls .instructions {
-	font-size: 1.2em;
+	font-size: 1.5em;
 	flex-grow: 1;
 	width: 100%;
 	text-align: center;
 }
 
+/*
 .controls .instructions::before {
 	content: "\2139\0020";
 	font-weight: bold;
 }
+*/
 
 .controls .instructions .item {
 	font-weight: bold;
-	font-size: 1.2em;
+	font-size: 2em;
 	white-space: nowrap;
 }
 
@@ -243,6 +245,7 @@ let config = {
 	classes: [],
 };		// Fetch from server
 let classify_mode = false;	// Classify mode for testing
+let finished = false;
 
 // --- LOCAL RECOGNIZER ---
 const IMAGE_SIZE = 28;
@@ -586,7 +589,11 @@ function next_drawing() {
 	
 	// Count correct drawings
 	if (drawing_class && recognized_class === drawing_class) {
-		drawing_count += 1;
+		if (config.maxCount && drawing_count >= config.maxCount) {
+			finished = true;
+		} else {
+			drawing_count += 1;
+		}
 	}
 
 	// Clear image
@@ -630,12 +637,21 @@ function update_instructions() {
 	} else if (classify_mode) {
 		message = 'Classifying mode.';
 		document.querySelector("#nextButton").innerText = "➡️ Resume";
+	} else if (finished) {
+		message = config.finishMessage ? config.finishMessage : `🎉 You drew all ${config.maxCount}, thanks for playing!`;
+		document.querySelector("#nextButton").disabled = true;
 	} else if (drawing_class) {
-		message = `Drawing ${drawing_count}: <span class="item">${drawing_class}</span>.`;
+		const of = config && config.maxCount ? ` of ${config.maxCount}` : '';
 		if (recognized_class === drawing_class) {
+			message = `You drew (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
 			message += " ✅";
-			document.querySelector("#nextButton").innerText = "➡️ Next";
+			if (config.maxCount && drawing_count >= config.maxCount) {
+				document.querySelector("#nextButton").innerText = "🏁 Finish";
+			} else {
+				document.querySelector("#nextButton").innerText = "➡️ Next";
+			}
 		} else {
+			message = `Draw (${drawing_count}${of}): <span class="item">${drawing_class}</span>`;
 			document.querySelector("#nextButton").innerText = "↩️ Skip";
 		}
 	} else {
@@ -649,6 +665,7 @@ function clear() {
 	// If debug image exists, remove it
 	const debugImage = document.getElementById("debugImage");
 	if (debugImage) { debugImage.remove(); }
+	document.querySelector("#clearButton").disabled = true;
 
 	const ctx = document.querySelector("canvas").getContext("2d");
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -672,7 +689,7 @@ function show_results(results) {
 	} else {
 		recognized_class = results.detected_class;
 		const correct = recognized_class === drawing_class;
-		if (classify_mode) {
+		if (classify_mode || finished) {
 			resultsDiv.innerHTML = prefix + `<h2>ℹ️ My guess was: ${recognized_class}</h2>`;
 		} else if (!recognized_class) {
 			resultsDiv.innerHTML = prefix + `<h2>😢 Sorry, I could not guess.</h2>`;
@@ -783,11 +800,13 @@ function classify_strokes() {
 	}
 }
 
-document.querySelector("#clearButton").addEventListener("click", (e) => {
+document.querySelector("#clearButton").addEventListener("mousedown", (e) => {
 	// If shift is pressed
 	if (e.shiftKey) {
 		classify_mode = true;
 	}
+});
+document.querySelector("#clearButton").addEventListener("click", (e) => {
 	clear();
 });
 document.querySelector("#classifyStrokesButton").addEventListener("click", () => classify_strokes());
@@ -817,6 +836,7 @@ function draw(pointerId, x, y) {
 
 	// Draw only the last segment for this stroke
 	draw_to_canvas(document.querySelector("canvas"), [currentStroke.slice(-2)], true);
+	document.querySelector("#clearButton").disabled = false;
 }
 
 function stopDrawing(pointerId) {
@@ -856,6 +876,7 @@ async function run() {
 				const img = new Image();
 				img.onload = async function() {
 					classify_mode = 'image';
+					document.querySelector("#clearButton").disabled = false;
 					// Draw to canvas
 					const canvas = document.querySelector("canvas");
 					const ctx = canvas.getContext("2d");
