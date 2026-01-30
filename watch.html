@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="data:;base64,">
-<title>State</title>
+<title>Doodle with AI!</title>
 <style>
 html, body {
     font-family: sans-serif;
@@ -88,7 +88,7 @@ footer img {
 <body>
 
 <header>
-    <h1>Quick Draw!</h1>
+    <h1>Doodle with AI!</h1>
 </header>
 
 <section class="image-left">
@@ -134,7 +134,16 @@ function watchEvent(event) {
     // Handle Watch events here
     watchLog(`WATCH: data=${event.data}`);
     if (event.data && !event.data._initial && !event.data._failed) {
-        watchLog(`WATCH: Non-initial event, reloading...`);
+        watchLog(`WATCH: Non-initial event, refreshing...`);
+        //location.reload();
+
+        // HACK: Iterate all img elements and update src with cache-buster
+        const now = Date.now()
+        const imgs = document.querySelectorAll('img');
+        imgs.forEach((img) => {
+            const src = img.src.split('?')[0];
+            img.src = `${src}?t=${now}`;
+        });
     }
     if (event.data._modified) {
         modified = event.data._modified;
