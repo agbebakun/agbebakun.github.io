@@ -4,10 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Animation</title>
-</head>
-<body>
-    <h1>Animation</h1>
+    <!--
+    Page uses the background image cup_0000.png and an SVG filter animated to threshold the image and create an animation. 
+    -->
+    <style>
+        :root{
+            --threshold: 0%;
+        }
 
-	<!-- TODO: SVG filters -->
+        html {
+            /*
+            background: url('../cup_0000.png') no-repeat center center fixed;
+            background-size: cover;
+            */
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: sans-serif;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        .threshold {
+            filter: grayscale(100%) brightness(calc(100% + var(--threshold))) contrast(10000%);
+        }
+
+    </style>
+</head>
+<body class="threshold">
+    <!--
+    <input type="range" min="0" max="100" value="0" style="width: 80%;"><output>-</output>
+    -->
+    <img width="100%" src="../cup_0000.png">
 </body>
+<script>
+function curve(x) {
+    // Curves from 0 to 1, with a steep increase at the end
+    x = Math.max(0, Math.min(1, x)); // Clamp x to [0, 1]
+    const minVal = -49;
+    const maxVal = 4200;
+    const exp = 5;
+    return (maxVal - minVal) * Math.pow((1 - x), exp) + minVal;
+}
+// Fastest animation callback
+const startTime = performance.now();
+function animate() {
+    const animatePortion = 0.5;
+    const intervalMs = 10000;
+    const elapsed = Math.floor(performance.now() - startTime) % intervalMs;
+    const threshold = curve(elapsed / (animatePortion * intervalMs)).toFixed(2) + '%';
+    console.log(threshold);
+    document.documentElement.style.setProperty('--threshold', threshold);
+    requestAnimationFrame(animate);
+}
+animate();
+
+/*
+document.querySelector('input[type="range"]').addEventListener('input', (event) => {
+    const value = curve(event.target.value / 100).toFixed(2) + '%';
+    document.documentElement.style.setProperty('--threshold', value);
+    document.querySelector('output').textContent = value;
+});
+*/
+</script>
 </html>
