@@ -4,6 +4,7 @@ __pycache__
 logs.txt
 data/*.npy
 data/*.ndjson
+data/*.bin
 tensorboard/events.out.tfevents.*
 _local
 capture.png
@@ -20,3 +21,4 @@ classes-*.json
 trained_models/logs-*.txt
 trained_models/whole_model_quickdraw-*.onnx
 trained_models/whole_model_quickdraw-*
+*.png

@@ -26,6 +26,9 @@ pip install onnxscript onnxruntime
 
 ## Additional dependencies for watch.py
 pip install flask flask-sock watchdog
+
+## Additional dependencies for animated code
+pip install pillow
 ```
 
 
