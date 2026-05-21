@@ -32,10 +32,15 @@ class MyDataset(Dataset):
             file_ = "{}/full_numpy_bitmap_{}.npy".format(self.root_path, class_name)
             print("Loading item {} -- {}".format(item, file_))
             image_cache[class_name] = np.load(file_).astype(np.float32)
-        image = image_cache[class_name][self.offset + (item % self.num_images_per_class)]
-        image /= 255
-        resized_image = image.reshape((1, 28, 28)), int(item / self.num_images_per_class)
-        return resized_image
+            image_cache[class_name] /= 255
+            image_cache[class_name] = image_cache[class_name].reshape((-1, 1, 28, 28))
+        image = image_cache[class_name][self.offset + (item % self.num_images_per_class)], int(item / self.num_images_per_class)
+        return image
+
+        #image = image_cache[class_name][self.offset + (item % self.num_images_per_class)]
+        #image /= 255
+        #resized_image = image.reshape((1, 28, 28)), int(item / self.num_images_per_class)
+        #return resized_image
 
 
 if __name__ == "__main__":

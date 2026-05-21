@@ -77,6 +77,8 @@ The `classes.json` file contains, for example:
 
 Classes with a `_` prefix will not be included in the web page's class list.  If set, the `dialog` field details will be used in the web page to show a welcome message.  The `pairs` field is used to show pairwise comparison scores in `detect_image.py`.
 
+The url can have e.g. `#classes=test` appended to load the `classes-test.json` configuration file.
+
 
 ## Run the example painting app
 

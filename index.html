@@ -278,6 +278,7 @@ const strokes = [];		// Completed strokes (each stroke is an array of points, ea
 const activeStrokes = new Map(); // Active strokes keyed by pointerId
 let drawing_class = null;
 let recognized_class = null;
+let altClasses = null;
 let config = {
 	classes: [],
 };		// Fetch from server
@@ -307,8 +308,9 @@ async function recognize(data = null) {
 			const script = document.createElement('script');
 			script.src = './onnx-recognizer.js';
 			script.onload = async () => {
+				const suffix = altClasses ? `-${altClasses}` : '';
 				recognizer = new OnnxRecognizer(
-					"./trained_models/whole_model_quickdraw.onnx",
+					`./trained_models/whole_model_quickdraw${suffix}.onnx`,
 					[1, 1, IMAGE_SIZE, IMAGE_SIZE],
 					'input',
 					'linear_2'
@@ -757,7 +759,7 @@ function show_results(results) {
 				let score = (item.score * 100).toFixed(0);
 				if (score > 0) {
 					let dt = document.createElement("dt");
-					dt.textContent = `${item.class}`;
+					dt.textContent = `${item.class ? item.class : '(unknown)'}:`;
 					dl.appendChild(dt);
 					let dd = document.createElement("dd");
 					dd.textContent = `${score}%`;
@@ -775,7 +777,8 @@ function show_results(results) {
 }
 
 async function get_config() {
-	const response = await fetch("./classes.json");
+	const suffix = altClasses ? `-${altClasses}` : '';
+	const response = await fetch(`./classes${suffix}.json`);
 	const result = await response.json();
 	console.log("Available config:", result);
 	return result;
@@ -931,6 +934,22 @@ function started() {
 }
 
 async function run() {
+	// If hash changes, reload document
+	const originalHash = window.location.hash;
+	window.addEventListener("hashchange", function() {
+		if (window.location.hash !== originalHash) {
+			window.location.reload();
+		}
+	});
+
+	// Parse hash as URL search parameters for altClasses
+	const hash = originalHash.substring(1);
+	const params = new URLSearchParams(hash);
+	altClasses = params.get("classes");
+	if (altClasses && !/^[A-Za-z0-9_-]+$/.test(altClasses)) {
+		throw new Error("Invalid altClasses value: " + altClasses);
+	}
+
 	try {
 		config = await get_config();
 	} catch (e) {
@@ -1009,9 +1028,8 @@ async function run() {
 		console.log("Resized canvas to: ", canvas.width, canvas.height);
 		draw_to_canvas(canvas, getStrokesIncludingActive());
 	}
-	clear();
-	resizeCanvas();
 	window.addEventListener("resize", resizeCanvas);
+	resizeCanvas();
 
 	// In local-recognition mode, preload
 	if (USE_LOCAL_RECOGNIZER) {

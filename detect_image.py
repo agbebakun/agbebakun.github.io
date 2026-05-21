@@ -249,7 +249,7 @@ def crop_image_axis_aligned(image, crop_coordinates):
     return image
 
 
-def evaluate(filenames, use_alt_score):
+def evaluate(filenames, use_alt_score, detect_paper=False):
     model = load_model()
 
     hack_sharpen = False
@@ -270,6 +270,10 @@ def evaluate(filenames, use_alt_score):
         
         cv2.imwrite(capture_filename + '.orig.png', image)
         cap.release()
+
+        # If recalibrating with each image...
+        if detect_paper:
+            calibrate(capture_filename + '.orig.png', detect_paper)
 
         capture_coordinates = calibration.get('coordinates', None)
         if capture_coordinates:
@@ -452,7 +456,41 @@ def find_squares(image_filename, highlight_nth_square=None):
     return final_squares
 
 
-def calibrate(calibration_image=None):
+def run_detect_paper(image_filename):
+    # Find edges of the yellow square calibration target
+    min_color = np.array([0xbb, 0xaf, 0x6e])  # #bbaf6e
+    max_color = np.array([0xe8, 0xe2, 0xc6])  # #e8e2c6
+    mid_color = (min_color + max_color) // 2  # ~ #d9d59e
+
+    image = load_from_file(image_filename)
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    cv2.imwrite(image_filename + ".paper_hsv.png", hsv_image)
+
+    min_hsv = cv2.cvtColor(np.uint8([[min_color]]), cv2.COLOR_RGB2HSV)[0][0]
+    max_hsv = cv2.cvtColor(np.uint8([[max_color]]), cv2.COLOR_RGB2HSV)[0][0]
+    mask = cv2.inRange(hsv_image, min_hsv, max_hsv)
+
+    matching_pixels = np.sum(mask > 0)
+    total_pixels = mask.size
+    print(f"PAPER DETECTION: Found {matching_pixels} matching pixels out of {total_pixels} total pixels ({matching_pixels / total_pixels:.2%})")
+
+    # Make matching area white, and non-matching black
+    image[mask] = [mid_color[2], mid_color[1], mid_color[0]] # BGR
+    image[~mask] = [0x80, 0x80, 0x80]
+    cv2.imwrite(image_filename + ".paper_match.png", image)
+    
+    # Find edges of mask
+    edges = cv2.Canny(mask.astype(np.uint8) * 255, 50, 150, apertureSize=3)
+
+    # Make edge areas black, and non-edge areas white
+    image[edges > 0] = [0, 0, 0]
+    image[edges == 0] = [255, 255, 255]
+
+    output_filename = image_filename + ".paper_outline.png"
+    cv2.imwrite(output_filename, image)
+    return output_filename
+
+def calibrate(calibration_image=None, detect_paper=False):
     if calibration_image:
         print(f"CALIBRATION: Using existing image: {calibration_image}")
     else:
@@ -471,6 +509,10 @@ def calibrate(calibration_image=None):
             return
         cv2.imwrite(calibration_image, image)
         cap.release()
+
+    if detect_paper:
+        print("CALIBRATION: Detecting paper edges for calibration...")
+        calibration_image = run_detect_paper(calibration_image)
 
     squares = find_squares(calibration_image, CALIBRATION_NTH_SQUARE)
     if not squares:
@@ -509,22 +551,47 @@ if __name__ == '__main__':
         except:
             print("ERROR: Problem loading calibration data: " + CALIBRATION_FILE)
 
-    if len(sys.argv) > 1 and sys.argv[1] == '--calibrate':
+    # Parse arguments
+    filenames = []
+    do_calibrate = False
+    capture = False
+    detect_paper = False
+    for arg in sys.argv[1:]:
+        if arg == '--calibrate':
+            do_calibrate = True
+        elif arg == '--detect-paper':
+            detect_paper = True
+        elif arg == '--capture':
+            capture = True
+        elif arg.startswith('-'):
+            print(f"ERROR: Unknown argument: {arg}")
+            exit(0)
+        else:
+            filenames.append(arg)
+
+    if do_calibrate:
+        # exactly one filename?
         calibration_image = None
-        if len(sys.argv) > 2:
-            calibration_image = sys.argv[2]
-        calibrate(calibration_image)
-    elif len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] == '--capture'):
-        filenames = []
+        if len(filenames) == 0:
+            pass
+        elif len(filenames) == 1:
+            calibration_image = filenames[0]
+        else:
+            print("ERROR: Provide only one image for calibration, or none to capture from camera.")
+            exit(0)
+        calibrate(calibration_image, detect_paper)
+    elif capture:
+        if len(filenames) > 0:
+            print("ERROR: No filenames should be provided when using --capture.")
+            exit(0)
         while True:
             # Wait for key
             key = input("Press Enter to capture image from camera...").strip()
             if key.lower() == 'q':
                 break
             elif key.lower() == 'c':
-                calibrate()
+                calibrate(None, detect_paper)
                 continue
-            evaluate(filenames, use_alt_score)
+            evaluate(filenames, use_alt_score, detect_paper)
     else:
-        filenames = sys.argv[1:]
-        evaluate(filenames, use_alt_score)
+        evaluate(filenames, use_alt_score, detect_paper)

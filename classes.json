@@ -41,10 +41,22 @@
         "button": "Start Drawing!"
     },
     "pairs": [
-        ["cloud", "tree"],
-        ["hammer", "tree"],
-        ["hat", "book"],
-        ["book", "door"]
+        [
+            "cloud",
+            "tree"
+        ],
+        [
+            "hammer",
+            "tree"
+        ],
+        [
+            "hat",
+            "book"
+        ],
+        [
+            "book",
+            "door"
+        ]
     ],
     "altScore": false,
     "maxCount": 5,
