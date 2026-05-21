@@ -1,0 +1,60 @@
+Model's parameters: {'optimizer': 'sgd', 'total_images_per_class': 10000, 'ratio': 0.8, 'batch_size': 32, 'num_epochs': 20, 'lr': 0.01, 'es_min_delta': 0.0, 'es_patience': 3, 'data_path': 'data', 'log_path': 'tensorboard', 'saved_path': 'trained_models'}Epoch: 1/20 
+Test loss: 0.3925130367279053 Test accuracy: 0.8231615807903953 
+Test confusion matrix: 
+[[1548  451]
+ [ 256 1743]]
+
+Epoch: 2/20 
+Test loss: 0.26475462317466736 Test accuracy: 0.8914457228614308 
+Test confusion matrix: 
+[[1853  146]
+ [ 288 1711]]
+
+Epoch: 3/20 
+Test loss: 0.23768499493598938 Test accuracy: 0.9042021010505252 
+Test confusion matrix: 
+[[1805  194]
+ [ 189 1810]]
+
+Epoch: 4/20 
+Test loss: 0.264722615480423 Test accuracy: 0.8941970985492746 
+Test confusion matrix: 
+[[1704  295]
+ [ 128 1871]]
+
+Epoch: 5/20 
+Test loss: 0.23977673053741455 Test accuracy: 0.9137068534267133 
+Test confusion matrix: 
+[[1852  147]
+ [ 198 1801]]
+
+Epoch: 6/20 
+Test loss: 0.21518175303936005 Test accuracy: 0.9142071035517759 
+Test confusion matrix: 
+[[1856  143]
+ [ 200 1799]]
+
+Epoch: 7/20 
+Test loss: 0.23124665021896362 Test accuracy: 0.9187093546773387 
+Test confusion matrix: 
+[[1842  157]
+ [ 168 1831]]
+
+Epoch: 8/20 
+Test loss: 0.2591330409049988 Test accuracy: 0.9047023511755878 
+Test confusion matrix: 
+[[1890  109]
+ [ 272 1727]]
+
+Epoch: 9/20 
+Test loss: 0.26387372612953186 Test accuracy: 0.9017008504252126 
+Test confusion matrix: 
+[[1867  132]
+ [ 261 1738]]
+
+Epoch: 10/20 
+Test loss: 0.27585914731025696 Test accuracy: 0.9082041020510255 
+Test confusion matrix: 
+[[1802  197]
+ [ 170 1829]]
+
