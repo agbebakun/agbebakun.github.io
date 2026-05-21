@@ -61,24 +61,23 @@ main {
 .controls {
 	margin: 1em;
 
-	display: flex;
-	flex-direction: row;
-
+	display: grid;
+	grid-template-columns: 90px 1fr 90px;
 	align-items: center;
-	justify-content: center;
 }
 
 .controls button {
 	font-size: 1em;
 	margin: 0 0.5em;
 	padding: 0.5em 1em;
+	width: 80px;
 }
 
 .controls .instructions {
-	font-size: 1.5em;
-	flex-grow: 1;
-	width: 100%;
 	text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;	
 }
 
 /*
@@ -107,10 +106,6 @@ main {
 .controls .instructions .item.long {
 	/* font-stretch: condensed; */
 	letter-spacing: -2px;
-	display: inline-block;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
 .drawing {
@@ -938,6 +933,7 @@ async function run() {
 	const originalHash = window.location.hash;
 	window.addEventListener("hashchange", function() {
 		if (window.location.hash !== originalHash) {
+			console.log("Hash changed, reloading page...");
 			window.location.reload();
 		}
 	});
