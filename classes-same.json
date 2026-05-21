@@ -1,0 +1,64 @@
+{
+    "classes": [
+        "apple",
+        "book",
+        "bowtie",
+        "candle",
+        "cloud",
+        "cup",
+        "door",
+        "envelope",
+        "eyeglasses",
+        "guitar",
+        "hammer",
+        "hat",
+        "ice cream",
+        "leaf",
+        "scissors",
+        "star",
+        "t-shirt",
+        "pants",
+        "lightning",
+        "tree"
+    ],
+    "renamed_classes": {
+        "airplane": "aeroplane",
+        "cell phone": "mobile phone",
+        "couch": "sofa",
+        "eyeglasses": "spectacles",
+        "flashlight": "torch",
+        "pants": "trousers",
+        "sailboat": "sailing boat",
+        "streetlight": "street lamp",
+        "truck": "lorry"
+    },
+    "ignored_classes": [
+        "leaf"
+    ],
+    "dialog": {
+        "title": "Doodle with AI!",
+        "content": "<p>Welcome to <em>Doodle with AI!</em></p><ul><li>Please draw the <strong>five things</strong> we ask for.</li><li>Press <em>Skip</em> if one is too tricky.</li><li>Press <em>Clear</em> if you make a mistake.</li></ul>",
+        "button": "Start Drawing!"
+    },
+    "pairs": [
+        [
+            "cloud",
+            "tree"
+        ],
+        [
+            "hammer",
+            "tree"
+        ],
+        [
+            "hat",
+            "book"
+        ],
+        [
+            "book",
+            "door"
+        ]
+    ],
+    "altScore": false,
+    "maxCount": 5,
+    "noRestart": false
+}

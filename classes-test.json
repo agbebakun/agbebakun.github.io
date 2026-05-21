@@ -1,0 +1,28 @@
+{
+    "classes": [
+        "cloud",
+        "bush",
+        "leaf",
+        "feather",
+        "snake",
+        "river",
+        "cell phone",
+        "remote control"
+    ],
+    "renamed_classes": {
+        "airplane": "aeroplane",
+        "cell phone": "mobile phone",
+        "couch": "sofa",
+        "eyeglasses": "spectacles",
+        "flashlight": "torch",
+        "pants": "trousers",
+        "sailboat": "sailing boat",
+        "streetlight": "street lamp",
+        "truck": "lorry"
+    },
+    "ignored_classes": [
+    ],
+    "altScore": false,
+    "maxCount": 5,
+    "noRestart": false
+}
