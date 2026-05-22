@@ -80,6 +80,10 @@ main {
     overflow: hidden;	
 }
 
+.controls .instructions.wrapped {
+    white-space: normal;
+}
+
 /*
 .controls .instructions::before {
 	content: "\2139\0020";
@@ -161,7 +165,7 @@ dl {
 }
 dt {
   display: inline-block;
-  width: 5em;
+  width: 8em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -615,7 +619,12 @@ async function locally_classify_strokes() {
 // ------
 let shuffled_classes = [];
 let drawing_count = 1;
-function next_drawing() {
+function next_drawing(event) {
+	// If shift is pressed, count as correct
+	if (event && event.shiftKey && drawing_class) {
+		recognized_class = drawing_class;
+	}
+
 	classify_mode = false;
 	
 	if (finished) {
@@ -624,7 +633,7 @@ function next_drawing() {
 	}
 
 	// Count correct drawings
-	if (drawing_class && recognized_class === drawing_class) {
+	if (!finished && drawing_class && recognized_class === drawing_class) {
 		if (config.maxCount && drawing_count >= config.maxCount) {
 			finished = true;
 		} else {
@@ -668,6 +677,7 @@ function update_instructions() {
 	let message = '-';
 	let highlightNext = false;
 	let nextDisabled = false;
+	let wrappedMessage = false;
 
 	if (!config.classes) {		// Only if classes are not loaded yet
 		message = "(Press 'Start' to begin)";
@@ -677,6 +687,7 @@ function update_instructions() {
 		document.querySelector("#nextButton").innerText = "➡️ Resume";
 	} else if (finished) {
 		message = config.finishMessage ? config.finishMessage : `🎉 You drew all ${config.maxCount}, thanks for playing!`;
+		wrappedMessage = true;
 		if (config && config.noRestart) {
 			document.querySelector("#nextButton").innerText = "🏁 Finish";
 			nextDisabled = true;
@@ -705,6 +716,7 @@ function update_instructions() {
 		nextDisabled = true;
 	}
 	instructionsDiv.innerHTML = message;
+	instructionsDiv.classList.toggle("wrapped", wrappedMessage);
 	document.querySelector("#nextButton").classList.toggle("ok", highlightNext);
 	document.querySelector("#nextButton").disabled = nextDisabled;
 }
@@ -860,7 +872,7 @@ document.querySelector("#clearButton").addEventListener("click", (e) => {
 });
 document.querySelector("#classifyStrokesButton").addEventListener("click", () => classify_strokes());
 document.querySelector("#classifyImageButton").addEventListener("click", () => classify_image());
-document.querySelector("#nextButton").addEventListener("click", () => next_drawing());
+document.querySelector("#nextButton").addEventListener("click", (e) => next_drawing(e));
 
 function translate_coordinates(x, y) {
 	const dpr = window.devicePixelRatio || 1;
@@ -1021,7 +1033,7 @@ async function run() {
 		canvas.width = rect.width * dpr;
 		canvas.height = rect.height * dpr;
 		const ctx = canvas.getContext("2d");
-		console.log("Resized canvas to: ", canvas.width, canvas.height);
+		//console.log("Resized canvas to: ", canvas.width, canvas.height);
 		draw_to_canvas(canvas, getStrokesIncludingActive());
 	}
 	window.addEventListener("resize", resizeCanvas);
